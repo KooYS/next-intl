@@ -1303,6 +1303,38 @@ describe('prefix-based routing', () => {
       });
     });
 
+    describe('localized pathnames with a literal percent sign', () => {
+      const middlewareWithPathnames = createMiddleware({
+        defaultLocale: 'en',
+        locales: ['en', 'de'],
+        localePrefix: 'always',
+        pathnames: {
+          '/sale': {
+            en: '/sale',
+            de: '/100%-rabatt'
+          }
+        }
+      });
+
+      it('rewrites a localized pathname with an encoded percent sign', () => {
+        middlewareWithPathnames(createMockRequest('/de/100%25-rabatt'));
+        expect(MockedNextResponse.next).not.toHaveBeenCalled();
+        expect(MockedNextResponse.redirect).not.toHaveBeenCalled();
+        expect(MockedNextResponse.rewrite.mock.calls[0][0].toString()).toBe(
+          'http://localhost:3000/de/sale'
+        );
+      });
+
+      it('redirects to a localized pathname with an encoded percent sign', () => {
+        middlewareWithPathnames(createMockRequest('/de/sale'));
+        expect(MockedNextResponse.next).not.toHaveBeenCalled();
+        expect(MockedNextResponse.rewrite).not.toHaveBeenCalled();
+        expect(MockedNextResponse.redirect.mock.calls[0][0].toString()).toBe(
+          'http://localhost:3000/de/100%25-rabatt'
+        );
+      });
+    });
+
     describe('localized pathnames', () => {
       const middlewareWithPathnames = createMiddleware({
         defaultLocale: 'en',
