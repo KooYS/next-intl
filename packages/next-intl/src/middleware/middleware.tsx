@@ -47,8 +47,12 @@ export default function createMiddleware<
   return function middleware(request: NextRequest) {
     let unsafeExternalPathname: string;
     try {
-      // Resolve potential foreign symbols (e.g. /ja/%E7%B4%84 → /ja/約))
-      unsafeExternalPathname = decodeURI(request.nextUrl.pathname);
+      // Resolve potential foreign symbols (e.g. /ja/%E7%B4%84 → /ja/約)).
+      // `%25` is kept encoded, since a decoded `%` would end up in
+      // redirect and rewrite targets (e.g. /a%25b → /a%b).
+      unsafeExternalPathname = decodeURI(
+        request.nextUrl.pathname.replace(/%25/g, '%2525')
+      );
     } catch {
       // In case an invalid pathname is encountered, forward
       // it to Next.js which in turn responds with a 400

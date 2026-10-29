@@ -252,8 +252,42 @@ describe('prefix-based routing', () => {
         expect(MockedNextResponse.next).not.toHaveBeenCalled();
         expect(MockedNextResponse.rewrite).not.toHaveBeenCalled();
         expect(MockedNextResponse.redirect.mock.calls[0][0].toString()).toBe(
-          'http://localhost:3000/%09/some-page'
+          'http://localhost:3000/%2509/some-page'
         );
+      });
+    });
+
+    describe('encoded percent signs', () => {
+      it('keeps an encoded percent sign when rewriting', () => {
+        middleware(createMockRequest('/a%25b'));
+        expect(MockedNextResponse.next).not.toHaveBeenCalled();
+        expect(MockedNextResponse.redirect).not.toHaveBeenCalled();
+        expect(MockedNextResponse.rewrite.mock.calls[0][0].toString()).toBe(
+          'http://localhost:3000/en/a%25b'
+        );
+      });
+
+      it('keeps an encoded percent sign when redirecting', () => {
+        middleware(createMockRequest('/en/a%25b'));
+        expect(MockedNextResponse.next).not.toHaveBeenCalled();
+        expect(MockedNextResponse.rewrite).not.toHaveBeenCalled();
+        expect(MockedNextResponse.redirect.mock.calls[0][0].toString()).toBe(
+          'http://localhost:3000/a%25b'
+        );
+      });
+
+      it('does not decode encoded escape sequences twice', () => {
+        middleware(createMockRequest('/%25E2%2582%25AC'));
+        expect(MockedNextResponse.rewrite.mock.calls[0][0].toString()).toBe(
+          'http://localhost:3000/en/%25E2%2582%25AC'
+        );
+      });
+
+      it('does not rewrite a prefixed request for a non-default locale', () => {
+        middleware(createMockRequest('/de/a%25b'));
+        expect(MockedNextResponse.rewrite).not.toHaveBeenCalled();
+        expect(MockedNextResponse.redirect).not.toHaveBeenCalled();
+        expect(MockedNextResponse.next).toHaveBeenCalled();
       });
     });
 
